@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "2jrOCRuOxOY=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\mertb\\OneDrive\\Desktop\\Staj\\InfoTech\\ECommerce\\ProductService\\ProductService.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\mertb\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.6\\microsoft.aspnetcore.openapi.10.0.6.nupkg.sha512",
+    "C:\\Users\\mertb\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

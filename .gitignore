@@ -1,0 +1,7 @@
+.env
+.env.*
+!.env.example
+shortcuts.pdf
+.vscode
+
+UserService/appsettings.Development.json
