@@ -6,10 +6,48 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: userdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+
+  userservice:
+    build:
+      context: ./UserService
+      dockerfile: Dockerfile
+    container_name: ecommerce-userservice
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__UserDb: Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=postgres
+      Jwt__Secret: 2wF7nL9sQ1xT6mZ4cV8bN3kR5pH2yD0j
+      Jwt__Issuer: ECommercePlatform
+      Jwt__Audience: ECommercePlatform
+      Jwt__ExpiryHours: 24
+    ports:
+      - "5124:8080"
+
+  productservice:
+    build:
+      context: ./ProductService
+      dockerfile: Dockerfile
+    container_name: ecommerce-productservice
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ProductDb: Host=postgres;Port=5432;Database=productdb;Username=postgres;Password=postgres
+    ports:
+      - "5212:8080"
 
 volumes:
   pgdata:

@@ -4,4 +4,8 @@
 shortcuts.pdf
 .vscode
 
+bin/
+obj/
+
 UserService/appsettings.Development.json
+ProductService/appsettings.Development.json
