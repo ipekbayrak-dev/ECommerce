@@ -12,10 +12,19 @@ namespace UserService.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        public AuthController(IAuthService authService)
+        private readonly ILogger<AuthController> _logger;
+
+        private ApiErrorResponse BuildError(string message)
+        {
+            return ApiErrorResponse.Create(message, HttpContext.TraceIdentifier);
+        }
+
+        public AuthController(IAuthService authService, ILogger<AuthController> logger)
         {
             _authService = authService;
+            _logger = logger;
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -26,14 +35,20 @@ namespace UserService.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(ex.Message);
+                return Conflict(BuildError(ex.Message));
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(BuildError(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while registering user with email {Email}.", request.Email);
+                return StatusCode(500, BuildError("An unexpected error occurred while registering the user."));
             }
 
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -44,14 +59,20 @@ namespace UserService.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(ex.Message);
+                return Unauthorized(BuildError(ex.Message));
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(BuildError(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while logging in user with email {Email}.", request.Email);
+                return StatusCode(500, BuildError("An unexpected error occurred while logging in."));
             }
 
         }
+
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> Me()
@@ -59,7 +80,7 @@ namespace UserService.Controllers
             string? user = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(user, out int userId))
             {
-                return Unauthorized("Invalid token subject");
+                return Unauthorized(BuildError("Invalid token subject"));
             }
             try
             {
@@ -68,7 +89,12 @@ namespace UserService.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                return NotFound(ex.Message);
+                return NotFound(BuildError(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while retrieving profile for user id {UserId}.", userId);
+                return StatusCode(500, BuildError("An unexpected error occurred while fetching profile."));
             }
         }
 
@@ -83,11 +109,16 @@ namespace UserService.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                return NotFound(ex.Message);
+                return NotFound(BuildError(ex.Message));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(BuildError(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while changing role for user id {UserId}.", id);
+                return StatusCode(500, BuildError("An unexpected error occurred while changing role."));
             }
         }
     }

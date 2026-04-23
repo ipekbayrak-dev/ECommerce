@@ -17,6 +17,25 @@ builder.Services.AddScoped<IProductCatalogService, ProductCatalogService>();
 
 var app = builder.Build();
 
+app.Use(async (context, next) =>
+{
+    var incomingCorrelationId = context.Request.Headers["X-Correlation-ID"].FirstOrDefault();
+    var correlationId = string.IsNullOrWhiteSpace(incomingCorrelationId)
+        ? Guid.NewGuid().ToString("N")
+        : incomingCorrelationId;
+
+    context.TraceIdentifier = correlationId;
+    context.Response.Headers["X-Correlation-ID"] = correlationId;
+
+    using (app.Logger.BeginScope(new Dictionary<string, object>
+    {
+        ["CorrelationId"] = correlationId
+    }))
+    {
+        await next();
+    }
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
