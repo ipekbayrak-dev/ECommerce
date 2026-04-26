@@ -7,5 +7,6 @@ namespace OrderService.Models
         public DateTime Date { get; set; }
         public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
         public decimal Total { get; set; }
+        public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

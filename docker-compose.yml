@@ -49,5 +49,19 @@ services:
     ports:
       - "5212:8080"
 
+  orderservice:
+    build:
+      context: ./OrderService
+      dockerfile: Dockerfile
+    container_name: ecommerce-orderservice
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__OrderDb: Host=postgres;Port=5432;Database=orderdb;Username=postgres;Password=postgres
+    ports:
+      - "5313:8080"
+
 volumes:
   pgdata:
