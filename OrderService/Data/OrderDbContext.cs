@@ -16,8 +16,7 @@ namespace OrderService.Data
                 .HasMany(od => od.OrderItems)    
                 .WithOne(od => od.Order)
                 .HasForeignKey(od => od.OrderId)
-                .OnDelete(DeleteBehavior.Cascade)
-            ;
+                .OnDelete(DeleteBehavior.Cascade);
             base.OnModelCreating(modelBuilder);
         }
 
