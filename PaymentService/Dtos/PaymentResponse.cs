@@ -13,5 +13,6 @@ namespace PaymentService.Dtos
         public DateTime Date { get; set; }
         public string Method { get; set; } = null!;
         public PaymentStatus Status { get; set; }
+        public string? FailureReason { get; set; }
     }
 }

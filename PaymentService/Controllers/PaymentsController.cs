@@ -85,6 +85,8 @@ namespace PaymentService.Controllers
                 return StatusCode(500, BuildError("An unexpected error occurred."));
             }
         }
+        //stripe listen --forward-to http://localhost:5193/api/payments/webhook
+        //stripe trigger payment_intent.succeeded
         [HttpPost("webhook")]
         public async Task<IActionResult> HandleWebHookAsync([FromHeader(Name = "Stripe-Signature")] string stripeSignature)
         {

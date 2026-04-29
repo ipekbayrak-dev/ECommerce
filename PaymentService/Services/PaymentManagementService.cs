@@ -47,16 +47,54 @@ namespace PaymentService.Services
                 Amount = (long)(request.Amount * 100),
                 Currency = _currency,
                 Metadata = new Dictionary<string, string>
-        {
-            { "orderId", request.OrderId.ToString() },
-            { "userId", request.UserId.ToString() }
-        }
+                {
+                    { "orderId", request.OrderId.ToString() },
+                    { "userId", request.UserId.ToString() }
+                }
             };
 
-            var service = new PaymentIntentService();
-            var paymentIntent = await service.CreateAsync(options);
+            if (!string.IsNullOrWhiteSpace(request.PaymentMethodId))
+            {
+                options.PaymentMethod = request.PaymentMethodId;
+                options.Confirm = true;
+                options.ReturnUrl = "http://localhost:5193";
+            }
 
-            var payment = new Payment
+            var stripeService = new PaymentIntentService();
+            PaymentIntent paymentIntent;
+            var status = PaymentStatus.Pending;
+
+            try
+            {
+                paymentIntent = await stripeService.CreateAsync(options);
+                status = paymentIntent.Status switch
+                {
+                    "succeeded" => PaymentStatus.Completed,
+                    "requires_payment_method" => PaymentStatus.Failed,
+                    _ => PaymentStatus.Pending
+                };
+            }
+            catch (StripeException ex) when (ex.StripeError?.Type == "card_error")
+            {
+                var failedIntent = ex.StripeError.PaymentIntent;
+                var payment = new Payment
+                {
+                    UserId = request.UserId,
+                    OrderId = request.OrderId,
+                    Method = request.Method,
+                    Amount = request.Amount,
+                    Date = DateTime.UtcNow,
+                    StripePaymentIntentId = failedIntent?.Id ?? string.Empty,
+                    Status = PaymentStatus.Failed
+                };
+                _paymentDbContext.Add(payment);
+                await _paymentDbContext.SaveChangesAsync();
+                var failedResponse = MapToResponse(payment);
+                failedResponse.FailureReason = ex.StripeError.DeclineCode ?? ex.StripeError.Code;
+                return failedResponse;
+            }
+
+            var successPayment = new Payment
             {
                 UserId = request.UserId,
                 OrderId = request.OrderId,
@@ -64,13 +102,13 @@ namespace PaymentService.Services
                 Amount = request.Amount,
                 Date = DateTime.UtcNow,
                 StripePaymentIntentId = paymentIntent.Id,
-                Status = PaymentStatus.Pending
+                Status = status
             };
 
-            _paymentDbContext.Add(payment);
+            _paymentDbContext.Add(successPayment);
             await _paymentDbContext.SaveChangesAsync();
 
-            var response = MapToResponse(payment);
+            var response = MapToResponse(successPayment);
             response.ClientSecret = paymentIntent.ClientSecret;
             return response;
         }
