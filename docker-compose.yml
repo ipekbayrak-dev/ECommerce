@@ -63,5 +63,22 @@ services:
     ports:
       - "5313:8080"
 
+  paymentservice:
+    build:
+      context: ./PaymentService
+      dockerfile: Dockerfile
+    container_name: ecommerce-paymentservice
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__PaymentDb: Host=postgres;Port=5432;Database=paymentdb;Username=postgres;Password=postgres
+      Stripe__SecretKey: ${Stripe__SecretKey}
+      Stripe__WebhookSecret: ${Stripe__WebhookSecret}
+      Stripe__Currency: ${Stripe__Currency}
+    ports:
+      - "5314:8080"
+
 volumes:
   pgdata:
