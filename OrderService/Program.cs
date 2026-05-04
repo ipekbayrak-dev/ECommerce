@@ -1,3 +1,4 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using OrderService.Data;
 using OrderService.Services;
@@ -10,6 +11,14 @@ if (string.IsNullOrWhiteSpace(orderDbConnectionString))
 }
 builder.Services.AddDbContext<OrderDbContext>(options =>
     options.UseNpgsql(orderDbConnectionString));
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        cfg.Host(rabbitHost);
+    });
+});
 builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();

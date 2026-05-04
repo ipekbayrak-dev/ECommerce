@@ -1,3 +1,5 @@
+using Ecommerce.Messaging.Events;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using OrderService.Data;
 using OrderService.Dtos;
@@ -8,10 +10,11 @@ namespace OrderService.Services
     public class OrderManagementService : IOrderManagementService
     {
         private readonly OrderDbContext _orderDbContext;
-
-        public OrderManagementService(OrderDbContext dbContext)
+        private readonly IPublishEndpoint _publishEndpoint;
+        public OrderManagementService(OrderDbContext dbContext, IPublishEndpoint publishEndpoint)
         {
             _orderDbContext = dbContext;
+            _publishEndpoint = publishEndpoint;
         }
         private static OrderItemResponse MapToOrderItemResponse(OrderItem orderItem)
         {
@@ -38,7 +41,8 @@ namespace OrderService.Services
         }
         public async Task<OrderResponse> CancelAsync(int id)
         {
-            UpdateOrderRequest cancelRequest = new UpdateOrderRequest {
+            UpdateOrderRequest cancelRequest = new UpdateOrderRequest
+            {
                 OrderStatus = OrderStatus.Cancelled
             };
             return await UpdateStatusAsync(id, cancelRequest);
@@ -89,6 +93,13 @@ namespace OrderService.Services
 
             _orderDbContext.Add(order);
             await _orderDbContext.SaveChangesAsync();
+
+            await _publishEndpoint.Publish(new OrderPlacedEvent
+            {
+                OrderId = order.Id,
+                UserId = order.UserId,
+                Amount = total
+            });
 
             return MapToOrderResponse(order);
         }

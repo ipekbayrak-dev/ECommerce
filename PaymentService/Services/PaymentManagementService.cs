@@ -123,6 +123,12 @@ namespace PaymentService.Services
             return MapToResponse(payment);
         }
 
+        public async Task<PaymentResponse?> FindByOrderIdAsync(int orderId)
+        {
+            var payment = await _paymentDbContext.Payments.SingleOrDefaultAsync(p => p.OrderId == orderId);
+            return payment is null ? null : MapToResponse(payment);
+        }
+
         public async Task<PaymentResponse> GetByOrderIdAsync(int orderId)
         {
             var payment = await _paymentDbContext.Payments.SingleOrDefaultAsync(p => p.OrderId == orderId);
@@ -131,6 +137,16 @@ namespace PaymentService.Services
                 throw new KeyNotFoundException($"Payment for order ID {orderId} not found.");
             }
             return MapToResponse(payment);
+        }
+
+        public async Task<List<PaymentResponse>> GetByUserIdAsync(int userId)
+        {
+            var payments = await _paymentDbContext.Payments
+                .AsNoTracking()
+                .Where(p => p.UserId == userId)
+                .OrderByDescending(p => p.Date)
+                .ToListAsync();
+            return payments.Select(MapToResponse).ToList();
         }
 
         public async Task HandleWebHookAsync(string stripeEventJson, string stripeSignature)

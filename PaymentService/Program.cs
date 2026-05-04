@@ -1,7 +1,9 @@
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using PaymentService.Consumers;
 using PaymentService.Data;
 using PaymentService.Services;
-using Stripe; 
+using Stripe;
 var builder = WebApplication.CreateBuilder(args);
 
 var paymentDbConnectionString = builder.Configuration.GetConnectionString("PaymentDb");
@@ -22,6 +24,16 @@ StripeConfiguration.ApiKey = stripeSecret;
 
 builder.Services.AddDbContext<PaymentDbContext>(options =>
     options.UseNpgsql(paymentDbConnectionString));
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<OrderPlacedConsumer>();
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        cfg.Host(rabbitHost);
+        cfg.ConfigureEndpoints(context);
+    });
+});
 builder.Services.AddScoped<IPaymentManagementService, PaymentManagementService>();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();

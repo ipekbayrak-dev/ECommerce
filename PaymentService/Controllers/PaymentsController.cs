@@ -67,6 +67,26 @@ namespace PaymentService.Controllers
             }
         }
 
+        [HttpGet("user/{userId:int}")]
+        public async Task<ActionResult<List<PaymentResponse>>> GetByUserIdAsync(int userId)
+        {
+            if (userId <= 0)
+            {
+                return BadRequest(BuildError("User ID must be a positive integer."));
+            }
+
+            try
+            {
+                var response = await _paymentManagementService.GetByUserIdAsync(userId);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while getting payments for user {UserId}.", userId);
+                return StatusCode(500, BuildError("An unexpected error occurred."));
+            }
+        }
+
         [HttpPost]
         public async Task<ActionResult<PaymentResponse>> CreatePayment(CreatePaymentRequest request)
         {
