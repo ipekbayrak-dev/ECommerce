@@ -30,9 +30,8 @@ namespace OrderService.Controllers
 
             try
             {
-                var result = await _orderManagementService.GetAllAsync();
-                var paged = result.Skip((page - 1) * pageSize).Take(pageSize);
-                return Ok(paged);
+                var result = await _orderManagementService.GetAllAsync(page, pageSize);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -60,9 +59,12 @@ namespace OrderService.Controllers
             }
         }
 
-        [HttpGet("user/{userId}")]
+        [HttpGet("user/{userId:int}")]
         public async Task<ActionResult<IEnumerable<OrderResponse>>> GetByUserIdAsync(int userId)
         {
+            if (userId <= 0)
+                return BadRequest(BuildError("UserId must be greater than zero."));
+
             try
             {
                 var orders = await _orderManagementService.GetByUserIdAsync(userId);
@@ -117,7 +119,7 @@ namespace OrderService.Controllers
             }
         }
 
-        [HttpDelete("{id:int}")]
+        [HttpPost("{id:int}/cancel")]
         public async Task<ActionResult<OrderResponse>> CancelAsync(int id)
         {
             try

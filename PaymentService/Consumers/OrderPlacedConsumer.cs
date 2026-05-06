@@ -19,7 +19,7 @@ namespace PaymentService.Consumers
         {
             if (await _paymentManagementService.FindByOrderIdAsync(context.Message.OrderId) is not null)
             {
-                _logger.LogInformation("Payment for order {OrderId} already exists. Skipping.", context.Message.OrderId);
+                _logger.LogWarning("Payment for order {OrderId} already exists. Skipping.", context.Message.OrderId);
                  return;
             }
 

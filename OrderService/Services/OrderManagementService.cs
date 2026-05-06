@@ -104,17 +104,17 @@ namespace OrderService.Services
             return MapToOrderResponse(order);
         }
 
-        public async Task<List<OrderResponse>> GetAllAsync()
+        public async Task<List<OrderResponse>> GetAllAsync(int page, int pageSize)
         {
-
             var orders = await _orderDbContext.Orders
                 .AsNoTracking()
                 .Include(o => o.OrderItems)
                 .OrderByDescending(o => o.Date)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             return orders.Select(MapToOrderResponse).ToList();
-
         }
 
         public async Task<OrderResponse> GetByIdAsync(int id)
@@ -144,6 +144,9 @@ namespace OrderService.Services
 
         public async Task<OrderResponse> UpdateStatusAsync(int id, UpdateOrderRequest request)
         {
+            if (!Enum.IsDefined(typeof(OrderStatus), request.OrderStatus))
+                throw new ArgumentOutOfRangeException(nameof(request.OrderStatus), $"Invalid order status value: {(int)request.OrderStatus}");
+
             var order = await _orderDbContext.Orders
                 .Include(o => o.OrderItems)
                 .SingleOrDefaultAsync(o => o.Id == id);

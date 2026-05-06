@@ -13,8 +13,12 @@ if (string.IsNullOrWhiteSpace(jwtSecret))
 }
 
 builder.Services.AddControllers();
+builder.Services.AddOpenApi();
+var userDbConnectionString = builder.Configuration.GetConnectionString("UserDb");
+if (string.IsNullOrWhiteSpace(userDbConnectionString))
+    throw new InvalidOperationException("User DB connection string is missing. Set ConnectionStrings__UserDb environment variable.");
 builder.Services.AddDbContext<UserDbContext>(options =>
-options.UseNpgsql(builder.Configuration.GetConnectionString("UserDb")));
+    options.UseNpgsql(userDbConnectionString));
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -33,6 +37,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     };
 });
 var app = builder.Build();
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
 app.Use(async (context, next) =>
 {
