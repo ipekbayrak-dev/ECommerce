@@ -44,8 +44,8 @@ services:
 
   productservice:
     build:
-      context: ./ProductService
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ProductService/Dockerfile
     container_name: ecommerce-productservice
     depends_on:
       postgres:
