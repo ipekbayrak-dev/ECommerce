@@ -143,28 +143,5 @@ namespace ProductService.Controllers
                 return StatusCode(500, BuildError("An unexpected error occurred while deleting the product."));
             }
         }
-
-        [HttpPatch("{id:int}/stock")]
-        public async Task<ActionResult> UpdateStockAsync(int id, [FromBody] UpdateStockRequest request)
-        {
-            try
-            {
-                var result = await _productService.UpdateStockAsync(id, request);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(BuildError(ex.Message));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(BuildError(ex.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error while updating stock for product {ProductId}.", id);
-                return StatusCode(500, BuildError("An unexpected error occurred while updating the stock."));
-            }
-        }
     }
 }

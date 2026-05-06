@@ -22,11 +22,6 @@ namespace ProductService.Services
                 throw new ArgumentException("Product price cannot be negative.", nameof(request.Price));
             }
 
-            if (request.StockQuantity < 0)
-            {
-                throw new ArgumentException("Stock quantity cannot be negative.", nameof(request.StockQuantity));
-            }
-
             if (request.CategoryId <= 0)
             {
                 throw new ArgumentException("Category identifier must be greater than zero.", nameof(request.CategoryId));
@@ -43,11 +38,6 @@ namespace ProductService.Services
             if (request.Price is not null && request.Price < 0)
             {
                 throw new ArgumentException("Product price cannot be negative.", nameof(request.Price));
-            }
-
-            if (request.StockQuantity is not null && request.StockQuantity < 0)
-            {
-                throw new ArgumentException("Stock quantity cannot be negative.", nameof(request.StockQuantity));
             }
 
             if (request.CategoryId is not null && request.CategoryId <= 0)
@@ -77,7 +67,6 @@ namespace ProductService.Services
                 Name = product.Name,
                 Description = product.Description,
                 Price = product.Price,
-                StockQuantity = product.StockQuantity,
                 CategoryId = product.CategoryId,
                 CategoryName = product.Category.Name,
                 CreatedAtUtc = product.CreatedAtUtc
@@ -104,7 +93,6 @@ namespace ProductService.Services
                 Name = request.Name.Trim(),
                 Description = request.Description,
                 Price = request.Price,
-                StockQuantity = request.StockQuantity,
                 Category = category,
                 CreatedAtUtc = DateTime.UtcNow
             };
@@ -168,11 +156,6 @@ namespace ProductService.Services
                 product.Price = (decimal)request.Price;
             }
 
-            if (request.StockQuantity is not null)
-            {
-                product.StockQuantity = (int)request.StockQuantity;
-            }
-
             if (request.CategoryId is not null)
             {
                 var category = await _productDbContext.Categories.SingleOrDefaultAsync(c => c.Id == request.CategoryId);
@@ -189,28 +172,6 @@ namespace ProductService.Services
             await _productDbContext.SaveChangesAsync();
 
             return MapToResponse(product);
-        }
-
-        public async Task<ProductResponse> UpdateStockAsync(int id, UpdateStockRequest request)
-        {
-            var product = await _productDbContext.Products.Include(p => p.Category).SingleOrDefaultAsync(p => p.Id == id);
-
-            if (product is null)
-            {
-                throw new KeyNotFoundException($"Update operation failed: Product with identifier '{id}' does not exist.");
-            }
-
-            if (request.StockQuantity < 0)
-            {
-                throw new ArgumentException($"Update operation failed: Stock quantity cannot be negative. Received: {request.StockQuantity}");
-            }
-
-            product.StockQuantity = (int)request.StockQuantity;
-
-            await _productDbContext.SaveChangesAsync();
-
-            return MapToResponse(product);
-
         }
 
         public async Task<IEnumerable<ProductResponse>> GetAllAsync(string? search, int? categoryId, int page, int pageSize)

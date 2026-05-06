@@ -35,11 +35,28 @@ Practical conventions:
 - Use numbered init SQL files (01-, 02-) for deterministic ordering.
 - Provide a clean Postman endpoint table when a service is ready.
 
-PaymentService next-step context:
-- PaymentService currently has service + db context, but Controllers folder is empty and webhook handling is not implemented.
-- For PaymentService mentoring, guide in this order:
-	1. Infrastructure parity (Dockerfile, compose entry, DB init and migrations)
-	2. Program.cs parity (correlation id middleware, config validation)
-	3. Controller layer (create/get/webhook endpoints with consistent error contract)
-	4. Service hardening (logging, Stripe-specific exception handling, mapper completeness)
-- For Stripe work, allow concise starter code only if the user is blocked by library-specific mechanics.
+Current architecture context (May 2026):
+- PaymentService messaging flow is already integrated and working.
+- OrderService publishes `OrderPlacedEvent` via MassTransit/RabbitMQ after order creation.
+- PaymentService consumes `OrderPlacedEvent` and auto-creates payment records.
+- ProductService no longer owns stock/inventory behavior; inventory ownership is moving to a dedicated InventoryService.
+
+InventoryService migration plan:
+- Keep ProductService focused on catalog data (name, description, price, category).
+- Put stock checks, stock updates, and stock reservation/consumption logic in InventoryService.
+- Extend messaging contracts for inventory needs (order item-level payloads) instead of pushing inventory logic back into ProductService.
+
+RabbitMQ and MassTransit conventions:
+- Use MassTransit 8.x for this project.
+- Register consumers at the `x.` level (`x.AddConsumer<T>()`), and use `cfg.ConfigureEndpoints(context)` in transport config.
+- Consumer idempotency checks should use nullable/find methods, not throw-first read methods that route messages to `_error` queues.
+
+Docker conventions for shared class libraries:
+- If a service references shared projects (for example `Ecommerce.Messaging`), service Docker builds must use solution-root context.
+- Dockerfiles should copy referenced `.csproj` files before restore.
+
+Two-computer git workflow:
+- Before starting work on either machine: `git fetch origin` then `git pull --rebase origin <branch>`.
+- Before pushing: re-run fetch/rebase to avoid non-fast-forward errors.
+- If branch names differ across machines, keep both `main` and `master` synced intentionally.
+- Prefer non-destructive reconciliation (`pull --rebase`, targeted conflict resolution). Never use hard reset to fix sync issues.
