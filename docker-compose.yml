@@ -93,5 +93,22 @@ services:
     ports:
       - "5314:8080"
 
+  inventoryservice:
+    build:
+      context: .
+      dockerfile: InventoryService/Dockerfile
+    container_name: ecommerce-inventoryservice
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__InventoryDb: Host=postgres;Port=5432;Database=inventorydb;Username=postgres;Password=postgres
+      RabbitMQ__Host: rabbitmq
+    ports:
+      - "5315:8080"
+
 volumes:
   pgdata:

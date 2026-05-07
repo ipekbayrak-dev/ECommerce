@@ -3,13 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace InventoryService.Data
 {
-    public class InventoryDbContext : DbContext
+    public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : DbContext(options)
     {
-        public InventoryDbContext(DbContextOptions<InventoryDbContext> options) : base(options)
-        {
-
-        }
-
         public DbSet<InventoryItem> InventoryItems { get; set; }
     }
 }
