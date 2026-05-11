@@ -17,9 +17,16 @@ namespace PaymentService.Consumers
         }
         public async Task Consume(ConsumeContext<OrderPlacedEvent> context)
         {
+            var messageId = context.MessageId?.ToString() ?? "n/a";
+            var correlationId = context.CorrelationId?.ToString() ?? "n/a";
+
             if (await _paymentManagementService.FindByOrderIdAsync(context.Message.OrderId) is not null)
             {
-                _logger.LogWarning("Payment for order {OrderId} already exists. Skipping.", context.Message.OrderId);
+                _logger.LogWarning(
+                    "Payment for order {OrderId} already exists. Skipping. MessageId {MessageId}, CorrelationId {CorrelationId}.",
+                    context.Message.OrderId,
+                    messageId,
+                    correlationId);
                  return;
             }
 
@@ -30,6 +37,12 @@ namespace PaymentService.Consumers
                 Amount = context.Message.Amount,
                 Method = "Automatic"
             });
+
+            _logger.LogInformation(
+                "Payment created from OrderPlacedEvent for OrderId {OrderId}. MessageId {MessageId}, CorrelationId {CorrelationId}.",
+                context.Message.OrderId,
+                messageId,
+                correlationId);
         }
     }
 }

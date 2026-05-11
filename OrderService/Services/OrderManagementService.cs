@@ -1,5 +1,6 @@
 using Ecommerce.Messaging.Events;
 using MassTransit;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using OrderService.Data;
 using OrderService.Dtos;
@@ -11,10 +12,15 @@ namespace OrderService.Services
     {
         private readonly OrderDbContext _orderDbContext;
         private readonly IPublishEndpoint _publishEndpoint;
-        public OrderManagementService(OrderDbContext dbContext, IPublishEndpoint publishEndpoint)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public OrderManagementService(
+            OrderDbContext dbContext,
+            IPublishEndpoint publishEndpoint,
+            IHttpContextAccessor httpContextAccessor)
         {
             _orderDbContext = dbContext;
             _publishEndpoint = publishEndpoint;
+            _httpContextAccessor = httpContextAccessor;
         }
         private static OrderItemResponse MapToOrderItemResponse(OrderItem orderItem)
         {
@@ -94,12 +100,26 @@ namespace OrderService.Services
             _orderDbContext.Add(order);
             await _orderDbContext.SaveChangesAsync();
 
-            await _publishEndpoint.Publish(new OrderPlacedEvent
+            var correlationId = Guid.NewGuid();
+            var traceIdentifier = _httpContextAccessor.HttpContext?.TraceIdentifier;
+            if (!string.IsNullOrWhiteSpace(traceIdentifier) && Guid.TryParse(traceIdentifier, out var parsedCorrelationId))
             {
-                OrderId = order.Id,
-                UserId = order.UserId,
-                Amount = total
-            });
+                correlationId = parsedCorrelationId;
+            }
+
+            await _publishEndpoint.Publish(
+                new OrderPlacedEvent
+                {
+                    OrderId = order.Id,
+                    UserId = order.UserId,
+                    Amount = total,
+                    Items = orderItems.Select(i => new OrderPlacedItem
+                    {
+                        ProductId = i.ProductId,
+                        Quantity = i.Quantity
+                    }).ToList()
+                },
+                publishContext => { publishContext.CorrelationId = correlationId; });
 
             return MapToOrderResponse(order);
         }

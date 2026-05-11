@@ -20,6 +20,7 @@ builder.Services.AddMassTransit(x =>
     });
 });
 builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 

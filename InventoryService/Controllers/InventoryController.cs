@@ -92,7 +92,7 @@ namespace InventoryService.Controllers
             try
             {
                 var response = await _inventoryManagementService.SeedAsync(productId, request);
-                return CreatedAtAction(nameof(GetByProductIdAsync), new { productId = response.ProductId }, response);
+                return Created($"/api/inventory/{response.ProductId}", response);
             }
             catch (InvalidOperationException ex)
             {

@@ -15,7 +15,7 @@ builder.Services.AddDbContext<InventoryDbContext>(options =>
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<OrderPlacedConsumer>();
+    x.AddConsumer<OrderPlacedConsumer, OrderPlacedConsumerDefinition>();
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
