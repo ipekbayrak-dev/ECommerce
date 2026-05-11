@@ -35,6 +35,7 @@ namespace PaymentService.Controllers
             }
             catch (KeyNotFoundException ex)
             {
+                _logger.LogWarning(ex, "Payment {PaymentId} not found.", id);
                 return NotFound(BuildError(ex.Message));
             }
             catch (Exception ex)
@@ -58,6 +59,7 @@ namespace PaymentService.Controllers
             }
             catch (KeyNotFoundException ex)
             {
+                _logger.LogWarning(ex, "Payment for order {OrderId} not found.", orderId);
                 return NotFound(BuildError(ex.Message));
             }
             catch (Exception ex)

@@ -26,7 +26,7 @@ builder.Services.AddDbContext<PaymentDbContext>(options =>
     options.UseNpgsql(paymentDbConnectionString));
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<OrderPlacedConsumer>();
+    x.AddConsumer<OrderPlacedConsumer, OrderPlacedConsumerDefinition>();
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
@@ -44,6 +44,25 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.Use(async (context, next) =>
+{
+    var incomingCorrelationId = context.Request.Headers["X-Correlation-ID"].FirstOrDefault();
+    var correlationId = string.IsNullOrWhiteSpace(incomingCorrelationId)
+        ? Guid.NewGuid().ToString("N")
+        : incomingCorrelationId;
+
+    context.TraceIdentifier = correlationId;
+    context.Response.Headers["X-Correlation-ID"] = correlationId;
+
+    using (app.Logger.BeginScope(new Dictionary<string, object>
+    {
+        ["CorrelationId"] = correlationId
+    }))
+    {
+        await next();
+    }
+});
 
 app.MapControllers();
 app.Run();
