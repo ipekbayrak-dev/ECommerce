@@ -110,5 +110,21 @@ services:
     ports:
       - "5315:8080"
 
+  apigateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    container_name: ecommerce-apigateway
+    depends_on:
+      - userservice
+      - productservice
+      - orderservice
+      - paymentservice
+      - inventoryservice
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    ports:
+      - "5000:8080"
+
 volumes:
   pgdata:
