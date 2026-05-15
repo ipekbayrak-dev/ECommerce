@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OrderService.Services;
 using OrderService.Dtos;
@@ -20,6 +21,7 @@ namespace OrderService.Controllers
         private ApiErrorResponse BuildError(string message) =>
             ApiErrorResponse.Create(message, HttpContext.TraceIdentifier);
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderResponse>>> GetAllAsync(
             [FromQuery] int page = 1,
@@ -40,6 +42,7 @@ namespace OrderService.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("{id:int}")]
         public async Task<ActionResult<OrderResponse>> GetByIdAsync(int id)
         {
@@ -59,6 +62,7 @@ namespace OrderService.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("user/{userId:int}")]
         public async Task<ActionResult<IEnumerable<OrderResponse>>> GetByUserIdAsync(int userId)
         {
@@ -77,6 +81,7 @@ namespace OrderService.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<OrderResponse>> CreateAsync([FromBody] CreateOrderRequest request)
         {
@@ -96,6 +101,7 @@ namespace OrderService.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut("{id:int}/status")]
         public async Task<ActionResult<OrderResponse>> UpdateStatusAsync(int id, [FromBody] UpdateOrderRequest request)
         {
@@ -119,6 +125,7 @@ namespace OrderService.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("{id:int}/cancel")]
         public async Task<ActionResult<OrderResponse>> CancelAsync(int id)
         {

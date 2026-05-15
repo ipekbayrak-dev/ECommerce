@@ -1,8 +1,11 @@
+using System.Text;
 using InventoryService.Consumers;
 using InventoryService.Data;
 using InventoryService.Services;
 using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 var inventoryDbConnectionString = builder.Configuration.GetConnectionString("InventoryDb");
 if (string.IsNullOrWhiteSpace(inventoryDbConnectionString))
     throw new InvalidOperationException("Inventory DB connection string is missing. Set ConnectionStrings__InventoryDb environment variable.");
+
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+if (string.IsNullOrWhiteSpace(jwtSecret))
+    throw new InvalidOperationException("JWT secret is missing. Set Jwt__Secret environment variable.");
 
 builder.Services.AddDbContext<InventoryDbContext>(options =>
     options.UseNpgsql(inventoryDbConnectionString));
@@ -28,6 +35,22 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddScoped<IInventoryManagementService, InventoryManagementService>();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -55,6 +78,9 @@ app.Use(async (context, next) =>
         await next();
     }
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/", () => Results.Content("""
 <html><body style="font-family:sans-serif;padding:2rem;background:#0f0f0f;color:#fff">

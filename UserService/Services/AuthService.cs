@@ -37,7 +37,7 @@ namespace UserService.Services
             }
 
             User user = new User { Username = normalizedUsername, Email = normalizedEmail };
-            user.SetPassWord(request.Password);
+            user.SetPassword(request.Password);
 
             _userDbContext.Add(user);
             await _userDbContext.SaveChangesAsync();

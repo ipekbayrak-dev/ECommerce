@@ -24,6 +24,12 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    ports:
+      - "6379:6379"
+
   userservice:
     build:
       context: ./UserService
@@ -55,6 +61,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__ProductDb: Host=postgres;Port=5432;Database=productdb;Username=postgres;Password=postgres
+      Jwt__Secret: ${Jwt__Secret}
+      Jwt__Issuer: ECommercePlatform
+      Jwt__Audience: ECommercePlatform
     ports:
       - "5212:8080"
 
@@ -73,6 +82,9 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__OrderDb: Host=postgres;Port=5432;Database=orderdb;Username=postgres;Password=postgres
       RabbitMQ__Host: rabbitmq
+      Jwt__Secret: ${Jwt__Secret}
+      Jwt__Issuer: ECommercePlatform
+      Jwt__Audience: ECommercePlatform
     ports:
       - "5313:8080"
 
@@ -115,6 +127,9 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__InventoryDb: Host=postgres;Port=5432;Database=inventorydb;Username=postgres;Password=postgres
       RabbitMQ__Host: rabbitmq
+      Jwt__Secret: ${Jwt__Secret}
+      Jwt__Issuer: ECommercePlatform
+      Jwt__Audience: ECommercePlatform
     ports:
       - "5315:8080"
 

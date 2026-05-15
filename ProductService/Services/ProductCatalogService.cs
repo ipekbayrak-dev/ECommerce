@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using ProductService.Data;
 using ProductService.Dtos;
 using ProductService.Models;
@@ -9,6 +10,13 @@ namespace ProductService.Services
     {
         private const int MaxPageSize = 100;
         private readonly ProductDbContext _productDbContext;
+        private readonly IDistributedCache _distributedCache;
+
+        public ProductCatalogService(ProductDbContext productDbContext, IDistributedCache distributedCache)
+        {
+            _productDbContext = productDbContext;
+            _distributedCache = distributedCache;
+        }
 
         private static void ValidateCreateRequest(CreateProductRequest request)
         {
@@ -71,10 +79,6 @@ namespace ProductService.Services
                 CategoryName = product.Category.Name,
                 CreatedAtUtc = product.CreatedAtUtc
             };
-        }
-        public ProductCatalogService(ProductDbContext productDbContext)
-        {
-            _productDbContext = productDbContext;
         }
 
         public async Task<ProductResponse> CreateAsync(CreateProductRequest request)

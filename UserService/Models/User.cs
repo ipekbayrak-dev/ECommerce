@@ -10,7 +10,7 @@ namespace UserService.Models
         public string? PasswordHash { get; private set; }
         public UserRoles Role { get; set; } = UserRoles.Customer;
 
-        public void SetPassWord(string plainPassword)
+        public void SetPassword(string plainPassword)
         {
             this.PasswordHash = BCrypt.Net.BCrypt.HashPassword(plainPassword);
         }

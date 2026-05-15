@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Dtos;
 using ProductService.Services;
@@ -22,6 +23,7 @@ namespace ProductService.Controllers
             _logger = logger;
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<ProductResponse>> CreateAsync([FromBody] CreateProductRequest request)
         {
@@ -98,6 +100,7 @@ namespace ProductService.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut("{id:int}")]
         public async Task<ActionResult<ProductResponse>> UpdateAsync(int id, [FromBody] UpdateProductRequest request)
         {
@@ -125,6 +128,7 @@ namespace ProductService.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> DeleteAsync(int id)
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using InventoryService.Dtos;
@@ -51,6 +52,7 @@ namespace InventoryService.Controllers
             }
         }
 
+        [Authorize]
         [HttpPatch("{productId:int}/adjust")]
         public async Task<ActionResult<InventoryItemResponse>> AdjustStockAsync(int productId, [FromBody] AdjustStockRequest request)
         {
@@ -81,6 +83,7 @@ namespace InventoryService.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("{productId:int}/seed")]
         public async Task<ActionResult<InventoryItemResponse>> SeedAsync(int productId, [FromBody] SeedInventoryRequest request)
         {
