@@ -33,6 +33,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__UserDb: Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=postgres
       Jwt__Secret: 2wF7nL9sQ1xT6mZ4cV8bN3kR5pH2yD0j
@@ -51,6 +52,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__ProductDb: Host=postgres;Port=5432;Database=productdb;Username=postgres;Password=postgres
     ports:
@@ -67,6 +69,7 @@ services:
       rabbitmq:
         condition: service_started
     environment:
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__OrderDb: Host=postgres;Port=5432;Database=orderdb;Username=postgres;Password=postgres
       RabbitMQ__Host: rabbitmq
@@ -84,6 +87,7 @@ services:
       rabbitmq:
         condition: service_started
     environment:
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__PaymentDb: Host=postgres;Port=5432;Database=paymentdb;Username=postgres;Password=postgres
       RabbitMQ__Host: rabbitmq
@@ -104,6 +108,7 @@ services:
       rabbitmq:
         condition: service_started
     environment:
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__InventoryDb: Host=postgres;Port=5432;Database=inventorydb;Username=postgres;Password=postgres
       RabbitMQ__Host: rabbitmq
@@ -123,6 +128,9 @@ services:
       - inventoryservice
     environment:
       ASPNETCORE_URLS: http://+:8080
+      Jwt__Secret: 2wF7nL9sQ1xT6mZ4cV8bN3kR5pH2yD0j
+      Jwt__Issuer: ECommercePlatform
+      Jwt__Audience: ECommercePlatform
     ports:
       - "5000:8080"
 
