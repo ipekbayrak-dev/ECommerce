@@ -6,6 +6,7 @@ shortcuts.pdf
 
 bin/
 obj/
+*.lscache
 
 UserService/appsettings.Development.json
 ProductService/appsettings.Development.json
