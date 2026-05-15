@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using UserService.Data;
 using UserService.Services;
 
@@ -39,6 +40,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
+    app.MapScalarApiReference();
     app.MapOpenApi();
 }
 
@@ -63,5 +65,13 @@ app.Use(async (context, next) =>
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/", () => Results.Content("""
+<html><body style="font-family:sans-serif;padding:2rem;background:#0f0f0f;color:#fff">
+<h2>UserService is running</h2>
+<a href="/scalar/v1" style="color:#60a5fa">Open Scalar UI</a>
+</body></html>
+""", "text/html"));
+
 app.MapControllers();
 app.Run();
