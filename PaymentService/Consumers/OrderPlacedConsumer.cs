@@ -30,13 +30,10 @@ namespace PaymentService.Consumers
                  return;
             }
 
-            await _paymentManagementService.CreatePaymentAsync(new CreatePaymentRequest()
-            {
-                UserId = context.Message.UserId,
-                OrderId = context.Message.OrderId,
-                Amount = context.Message.Amount,
-                Method = "Automatic"
-            });
+            await _paymentManagementService.CreatePendingAsync(
+                context.Message.UserId,
+                context.Message.OrderId,
+                context.Message.Amount);
 
             _logger.LogInformation(
                 "Payment created from OrderPlacedEvent for OrderId {OrderId}. MessageId {MessageId}, CorrelationId {CorrelationId}.",

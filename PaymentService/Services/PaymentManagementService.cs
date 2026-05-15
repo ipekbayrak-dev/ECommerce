@@ -31,6 +31,22 @@ namespace PaymentService.Services
                 Status = payment.Status
             };
         }
+        public async Task<PaymentResponse> CreatePendingAsync(int userId, int orderId, decimal amount)
+        {
+            var payment = new Payment
+            {
+                UserId = userId,
+                OrderId = orderId,
+                Amount = amount,
+                Method = "Pending",
+                Date = DateTime.UtcNow,
+                Status = PaymentStatus.Pending
+            };
+            _paymentDbContext.Add(payment);
+            await _paymentDbContext.SaveChangesAsync();
+            return MapToResponse(payment);
+        }
+
         public async Task<PaymentResponse> CreatePaymentAsync(CreatePaymentRequest request)
         {
             if (request.UserId <= 0)
