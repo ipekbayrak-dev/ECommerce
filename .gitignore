@@ -12,3 +12,4 @@ UserService/appsettings.Development.json
 ProductService/appsettings.Development.json
 OrderService/appsettings.Development.json
 PaymentService/appsettings.Development.json
+InventoryService/appsettings.Development.json

@@ -51,6 +51,11 @@ namespace PaymentService.Services
         {
             if (request.UserId <= 0)
                 throw new ArgumentException("Invalid User ID.", nameof(request.UserId));
+
+            var existing = await _paymentDbContext.Payments
+                .AnyAsync(p => p.OrderId == request.OrderId);
+            if (existing)
+                throw new InvalidOperationException($"A payment for order {request.OrderId} already exists.");
             if (request.OrderId <= 0)
                 throw new ArgumentException("Invalid Order ID.", nameof(request.OrderId));
             if (request.Amount <= 0)

@@ -36,7 +36,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__UserDb: Host=postgres;Port=5432;Database=userdb;Username=postgres;Password=postgres
-      Jwt__Secret: 2wF7nL9sQ1xT6mZ4cV8bN3kR5pH2yD0j
+      Jwt__Secret: ${Jwt__Secret}
       Jwt__Issuer: ECommercePlatform
       Jwt__Audience: ECommercePlatform
       Jwt__ExpiryHours: 24
@@ -94,6 +94,9 @@ services:
       Stripe__SecretKey: ${Stripe__SecretKey}
       Stripe__WebhookSecret: ${Stripe__WebhookSecret}
       Stripe__Currency: ${Stripe__Currency}
+      Jwt__Secret: ${Jwt__Secret}
+      Jwt__Issuer: ECommercePlatform
+      Jwt__Audience: ECommercePlatform
     ports:
       - "5314:8080"
 
@@ -128,7 +131,7 @@ services:
       - inventoryservice
     environment:
       ASPNETCORE_URLS: http://+:8080
-      Jwt__Secret: 2wF7nL9sQ1xT6mZ4cV8bN3kR5pH2yD0j
+      Jwt__Secret: ${Jwt__Secret}
       Jwt__Issuer: ECommercePlatform
       Jwt__Audience: ECommercePlatform
     ports:

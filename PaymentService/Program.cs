@@ -1,5 +1,8 @@
+using System.Text;
 using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PaymentService.Consumers;
 using PaymentService.Data;
 using PaymentService.Services;
@@ -21,6 +24,10 @@ if (string.IsNullOrWhiteSpace(stripeCurrency))
 if (string.IsNullOrWhiteSpace(stripeWebhook))
     throw new InvalidOperationException("Stripe webhook secret is missing.");
 
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+if (string.IsNullOrWhiteSpace(jwtSecret))
+    throw new InvalidOperationException("JWT secret is missing. Set Jwt__Secret environment variable.");
+
 StripeConfiguration.ApiKey = stripeSecret;
 
 builder.Services.AddDbContext<PaymentDbContext>(options =>
@@ -35,6 +42,21 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 });
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 builder.Services.AddScoped<IPaymentManagementService, PaymentManagementService>();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
@@ -65,6 +87,9 @@ app.Use(async (context, next) =>
         await next();
     }
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/", () => Results.Content("""
 <html><body style="font-family:sans-serif;padding:2rem;background:#0f0f0f;color:#fff">

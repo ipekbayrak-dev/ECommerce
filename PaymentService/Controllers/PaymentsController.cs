@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PaymentService.Dtos;
 using PaymentService.Services;
@@ -20,6 +21,7 @@ namespace PaymentService.Controllers
         private ApiErrorResponse BuildError(string message) =>
             ApiErrorResponse.Create(message, HttpContext.TraceIdentifier);
 
+        [Authorize]
         [HttpGet("{id:int}")]
         public async Task<ActionResult<PaymentResponse>> GetByIdAsync(int id)
         {
@@ -44,6 +46,7 @@ namespace PaymentService.Controllers
                 return StatusCode(500, BuildError("An unexpected error occurred."));
             }
         }
+        [Authorize]
         [HttpGet("order/{orderId:int}")]
         public async Task<ActionResult<PaymentResponse>> GetByOrderIdAsync(int orderId)
         {
@@ -69,6 +72,7 @@ namespace PaymentService.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("user/{userId:int}")]
         public async Task<ActionResult<List<PaymentResponse>>> GetByUserIdAsync(int userId)
         {
@@ -89,6 +93,7 @@ namespace PaymentService.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<PaymentResponse>> CreatePayment(CreatePaymentRequest request)
         {
@@ -100,6 +105,10 @@ namespace PaymentService.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(BuildError(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(BuildError(ex.Message));
             }
             catch (Exception ex)
             {
