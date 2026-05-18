@@ -57,6 +57,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
@@ -64,6 +66,7 @@ services:
       Jwt__Secret: ${Jwt__Secret}
       Jwt__Issuer: ECommercePlatform
       Jwt__Audience: ECommercePlatform
+      Redis__ConnectionString: redis:6379
     ports:
       - "5212:8080"
 

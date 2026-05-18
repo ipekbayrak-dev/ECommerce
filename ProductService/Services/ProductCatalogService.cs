@@ -3,14 +3,21 @@ using Microsoft.Extensions.Caching.Distributed;
 using ProductService.Data;
 using ProductService.Dtos;
 using ProductService.Models;
+using System.Text.Json;
 
 namespace ProductService.Services
 {
     public class ProductCatalogService : IProductCatalogService
     {
         private const int MaxPageSize = 100;
+        private static readonly DistributedCacheEntryOptions CacheOptions = new()
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+        };
         private readonly ProductDbContext _productDbContext;
         private readonly IDistributedCache _distributedCache;
+
+        private static string CacheKey(int id) => $"product:{id}";
 
         public ProductCatalogService(ProductDbContext productDbContext, IDistributedCache distributedCache)
         {
@@ -108,17 +115,22 @@ namespace ProductService.Services
 
         public async Task<ProductResponse?> GetByIdAsync(int id)
         {
+            var cacheKey = CacheKey(id);
+            var cached = await _distributedCache.GetStringAsync(cacheKey);
+            if (cached is not null)
+                return JsonSerializer.Deserialize<ProductResponse>(cached);
+
             var product = await _productDbContext.Products
                 .AsNoTracking()
                 .Include(p => p.Category)
                 .SingleOrDefaultAsync(p => p.Id == id);
 
             if (product is null)
-            {
                 return null;
-            }
 
-            return MapToResponse(product);
+            var response = MapToResponse(product);
+            await _distributedCache.SetStringAsync(cacheKey, JsonSerializer.Serialize(response), CacheOptions);
+            return response;
         }
 
         public async Task DeleteAsync(int id)
@@ -132,6 +144,7 @@ namespace ProductService.Services
 
             _productDbContext.Remove(product);
             await _productDbContext.SaveChangesAsync();
+            await _distributedCache.RemoveAsync(CacheKey(id));
         }
 
         public async Task<ProductResponse> UpdateAsync(int id, UpdateProductRequest request)
@@ -174,7 +187,7 @@ namespace ProductService.Services
             }
 
             await _productDbContext.SaveChangesAsync();
-
+            await _distributedCache.RemoveAsync(CacheKey(id));
             return MapToResponse(product);
         }
 
