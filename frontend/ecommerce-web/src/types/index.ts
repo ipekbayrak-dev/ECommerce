@@ -27,7 +27,7 @@ export interface UserProfileResponse {
 }
 
 export interface ChangeRoleRequest {
-  role: string;
+  role: "Admin" | "Customer";
 }
 
 // ─── Products ────────────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ export interface UpdateOrderRequest {
 
 // ─── Payments ────────────────────────────────────────────────────────────────
 
-export type PaymentStatus = "Pending" | "Succeeded" | "Failed" | "Refunded";
+export type PaymentStatus = "Pending" | "Processing" | "Completed" | "Failed" | "Declined" | "Cancelled" | "Refunded";
 
 export interface PaymentResponse {
   id: number;
