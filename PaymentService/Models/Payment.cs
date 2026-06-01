@@ -6,6 +6,7 @@ namespace PaymentService.Models
         public int UserId { get; set; }
         public int OrderId { get; set; }
         public string? StripePaymentIntentId { get; set; }
+        public string? ClientSecret { get; set; }
         public decimal Amount { get; set; }
         public required string Method { get; set; }
         public DateTime Date { get; set; }

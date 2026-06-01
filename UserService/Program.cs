@@ -13,7 +13,9 @@ if (string.IsNullOrWhiteSpace(jwtSecret))
     throw new InvalidOperationException("JWT secret is missing. Set Jwt__Secret environment variable.");
 }
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+        opts.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 var userDbConnectionString = builder.Configuration.GetConnectionString("UserDb");
 if (string.IsNullOrWhiteSpace(userDbConnectionString))

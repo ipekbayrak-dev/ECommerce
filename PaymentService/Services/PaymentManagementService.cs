@@ -1,3 +1,5 @@
+using Ecommerce.Messaging.Events;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using PaymentService.Data;
 using PaymentService.Dtos;
@@ -11,11 +13,13 @@ namespace PaymentService.Services
         private readonly PaymentDbContext _paymentDbContext;
         private readonly string _currency;
         private readonly string _webhookSecret;
-        public PaymentManagementService(PaymentDbContext paymentDbContext, IConfiguration configuration)
+        private readonly IPublishEndpoint _publishEndpoint;
+        public PaymentManagementService(PaymentDbContext paymentDbContext, IConfiguration configuration, IPublishEndpoint publishEndpoint)
         {
             _paymentDbContext = paymentDbContext;
             _currency = configuration["Stripe:Currency"]!;
             _webhookSecret = configuration["Stripe:WebhookSecret"]!;
+            _publishEndpoint = publishEndpoint;
         }
         private static PaymentResponse MapToResponse(Payment payment)
         {
@@ -25,6 +29,7 @@ namespace PaymentService.Services
                 UserId = payment.UserId,
                 OrderId = payment.OrderId,
                 StripePaymentIntentId = payment.StripePaymentIntentId,
+                ClientSecret = payment.ClientSecret,
                 Amount = payment.Amount,
                 Date = payment.Date,
                 Method = payment.Method,
@@ -33,17 +38,55 @@ namespace PaymentService.Services
         }
         public async Task<PaymentResponse> CreatePendingAsync(int userId, int orderId, decimal amount)
         {
+            var options = new PaymentIntentCreateOptions
+            {
+                Amount = (long)(amount * 100),
+                Currency = _currency,
+                Metadata = new Dictionary<string, string>
+                {
+                    { "orderId", orderId.ToString() },
+                    { "userId", userId.ToString() }
+                }
+            };
+
+            var stripeService = new PaymentIntentService();
+            var paymentIntent = await stripeService.CreateAsync(options);
+
             var payment = new Payment
             {
                 UserId = userId,
                 OrderId = orderId,
                 Amount = amount,
-                Method = "Pending",
+                Method = "Card",
                 Date = DateTime.UtcNow,
+                StripePaymentIntentId = paymentIntent.Id,
+                ClientSecret = paymentIntent.ClientSecret,
                 Status = PaymentStatus.Pending
             };
             _paymentDbContext.Add(payment);
             await _paymentDbContext.SaveChangesAsync();
+            return MapToResponse(payment);
+        }
+
+        public async Task<PaymentResponse> ConfirmByOrderAsync(int orderId)
+        {
+            var payment = await _paymentDbContext.Payments
+                .FirstOrDefaultAsync(p => p.OrderId == orderId)
+                ?? throw new KeyNotFoundException($"Payment for order {orderId} not found.");
+
+            if (payment.Status == PaymentStatus.Completed)
+                return MapToResponse(payment);
+
+            payment.Status = PaymentStatus.Completed;
+            await _paymentDbContext.SaveChangesAsync();
+
+            await _publishEndpoint.Publish(new PaymentConfirmedEvent
+            {
+                OrderId = payment.OrderId,
+                UserId = payment.UserId,
+                Amount = payment.Amount
+            });
+
             return MapToResponse(payment);
         }
 
@@ -91,7 +134,7 @@ namespace PaymentService.Services
                 status = paymentIntent.Status switch
                 {
                     "succeeded" => PaymentStatus.Completed,
-                    "requires_payment_method" => PaymentStatus.Failed,
+                    "requires_payment_method" => PaymentStatus.Pending,
                     _ => PaymentStatus.Pending
                 };
             }
@@ -123,6 +166,7 @@ namespace PaymentService.Services
                 Amount = request.Amount,
                 Date = DateTime.UtcNow,
                 StripePaymentIntentId = paymentIntent.Id,
+                ClientSecret = paymentIntent.ClientSecret,
                 Status = status
             };
 
@@ -172,7 +216,7 @@ namespace PaymentService.Services
 
         public async Task HandleWebHookAsync(string stripeEventJson, string stripeSignature)
         {
-            Event stripeEvent;
+            Stripe.Event stripeEvent;
             try
             {
                 stripeEvent = EventUtility.ConstructEvent(stripeEventJson, stripeSignature, _webhookSecret);

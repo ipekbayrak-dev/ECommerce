@@ -6,6 +6,7 @@ namespace PaymentService.Services
     {
         public Task<PaymentResponse> CreatePaymentAsync(CreatePaymentRequest request);
         public Task<PaymentResponse> CreatePendingAsync(int userId, int orderId, decimal amount);
+        public Task<PaymentResponse> ConfirmByOrderAsync(int orderId);
         public Task<PaymentResponse> GetByIdAsync(int id);
         public Task<PaymentResponse?> FindByOrderIdAsync(int orderId);
         public Task<PaymentResponse> GetByOrderIdAsync(int orderId);

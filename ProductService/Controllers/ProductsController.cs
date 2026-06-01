@@ -147,5 +147,20 @@ namespace ProductService.Controllers
                 return StatusCode(500, BuildError("An unexpected error occurred while deleting the product."));
             }
         }
+
+        [HttpGet("categories")]
+        public async Task<ActionResult<IEnumerable<CategoryResponse>>> GetCategoriesAsync()
+        {
+            try
+            {
+                var result = await _productService.GetCategoriesAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while getting categories.");
+                return StatusCode(500, BuildError("An unexpected error occurred while getting categories."));
+            }
+        }
     }
 }

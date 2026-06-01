@@ -3,6 +3,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OrderService.Consumers;
 using OrderService.Data;
 using OrderService.Services;
 using Scalar.AspNetCore;
@@ -20,16 +21,20 @@ builder.Services.AddDbContext<OrderDbContext>(options =>
     options.UseNpgsql(orderDbConnectionString));
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<PaymentConfirmedConsumer>();
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
         cfg.Host(rabbitHost);
+        cfg.ConfigureEndpoints(context);
     });
 });
 builder.Services.AddScoped<IOrderManagementService, OrderManagementService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+        opts.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

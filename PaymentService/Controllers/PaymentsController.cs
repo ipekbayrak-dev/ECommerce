@@ -118,6 +118,30 @@ namespace PaymentService.Controllers
         }
         //stripe listen --forward-to http://localhost:5193/api/payments/webhook
         //stripe trigger payment_intent.succeeded
+        [Authorize]
+        [HttpPost("order/{orderId:int}/confirm")]
+        public async Task<ActionResult<PaymentResponse>> ConfirmByOrderAsync(int orderId)
+        {
+            if (orderId <= 0)
+                return BadRequest(BuildError("Order ID must be a positive integer."));
+
+            try
+            {
+                var response = await _paymentManagementService.ConfirmByOrderAsync(orderId);
+                return Ok(response);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Payment for order {OrderId} not found during confirm.", orderId);
+                return NotFound(BuildError(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while confirming payment for order {OrderId}.", orderId);
+                return StatusCode(500, BuildError("An unexpected error occurred."));
+            }
+        }
+
         [HttpPost("webhook")]
         public async Task<IActionResult> HandleWebHookAsync([FromHeader(Name = "Stripe-Signature")] string stripeSignature)
         {

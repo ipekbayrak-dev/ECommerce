@@ -1,0 +1,24 @@
+# Node
+frontend/
+**/node_modules/
+
+# .NET build output
+**/bin/
+**/obj/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vs/
+**/*.user
+**/.vscode/
+
+# Logs
+**/*.log
+
+# Env files (never bake secrets into images)
+**/.env
+**/.env.local
+**/.env.*.local

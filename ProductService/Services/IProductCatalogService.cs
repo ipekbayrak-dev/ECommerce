@@ -9,5 +9,6 @@ namespace ProductService.Services
         public Task<IEnumerable<ProductResponse>> GetAllAsync(string? search, int? categoryId, int page, int pageSize);
         public Task<ProductResponse> UpdateAsync(int id, UpdateProductRequest request);
         public Task DeleteAsync(int id);
+        public Task<IEnumerable<CategoryResponse>> GetCategoriesAsync();
     }
 }

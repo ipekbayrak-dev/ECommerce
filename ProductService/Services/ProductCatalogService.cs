@@ -218,5 +218,14 @@ namespace ProductService.Services
 
             return products.Select(MapToResponse);
         }
+
+        public async Task<IEnumerable<CategoryResponse>> GetCategoriesAsync()
+        {
+            return await _productDbContext.Categories
+                .AsNoTracking()
+                .OrderBy(c => c.Name)
+                .Select(c => new CategoryResponse { Id = c.Id, Name = c.Name })
+                .ToListAsync();
+        }
     }
 }
