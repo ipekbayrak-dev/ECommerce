@@ -268,6 +268,22 @@ dotnet ef migrations list --project OrderService
 dotnet ef migrations remove --project OrderService
 ```
 
+### Stripe Test Cards
+
+> Use any future expiry (e.g. `12/34`), any 3-digit CVC (e.g. `123`), any ZIP.
+
+| Card Number | Scenario |
+|---|---|
+| `4242 4242 4242 4242` | ✅ Payment succeeds |
+| `4000 0025 0000 3155` | 🔐 Requires 3D Secure authentication |
+| `4000 0000 0000 9995` | ❌ Declined — insufficient funds |
+| `4000 0000 0000 0002` | ❌ Declined — generic decline |
+| `4000 0000 0000 0069` | ❌ Declined — expired card |
+| `4000 0000 0000 0127` | ❌ Declined — incorrect CVC |
+| `4000 0000 0000 0119` | ❌ Declined — processing error |
+
+---
+
 ### Git
 
 ```bash
