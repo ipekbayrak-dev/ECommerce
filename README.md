@@ -19,40 +19,73 @@
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Next.js Frontend                          │
-│                       (localhost:3000)                           │
-└────────────────────────────┬────────────────────────────────────┘
-                             │ HTTP
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   API Gateway  (YARP)  :5000                     │
-│              JWT validation · reverse proxy · routing            │
-└──┬──────────┬──────────┬───────────┬──────────┬─────────────────┘
-   │          │          │           │          │
-   ▼          ▼          ▼           ▼          ▼
-:5124      :5212      :5313       :5314      :5315
-UserSvc  ProductSvc  OrderSvc  PaymentSvc  InventorySvc
-   │          │          │           │          │
-   └──────────┴──────────┴───────────┴──────────┘
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-          PostgreSQL    RabbitMQ    Redis
-          (5 DBs)      (events)    (cache)
+```mermaid
+graph TD
+    Browser["🌐 Next.js Frontend\n:3000"]
+    GW["🔀 API Gateway — YARP\n:5000\nJWT validation · routing"]
+    US["👤 UserService\n:5124"]
+    PS["📦 ProductService\n:5212"]
+    OS["🛒 OrderService\n:5313"]
+    PAY["💳 PaymentService\n:5314"]
+    INV["🏭 InventoryService\n:5315"]
+    PG[("🐘 PostgreSQL\n5 databases")]
+    RMQ["🐇 RabbitMQ\nmessaging"]
+    REDIS["⚡ Redis\ncache"]
+
+    Browser -->|HTTP| GW
+    GW --> US
+    GW --> PS
+    GW --> OS
+    GW --> PAY
+    GW --> INV
+    US --> PG
+    PS --> PG
+    PS --> REDIS
+    OS --> PG
+    PAY --> PG
+    INV --> PG
+    OS -->|OrderPlacedEvent| RMQ
+    RMQ -->|OrderPlacedEvent| PAY
+    PAY -->|PaymentConfirmedEvent| RMQ
+    RMQ -->|PaymentConfirmedEvent| OS
 ```
 
-### Async Messaging Flow
+---
 
+## Async Messaging Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant OrderService
+    participant RabbitMQ
+    participant PaymentService
+    participant Stripe
+
+    User->>Frontend: Checkout
+    Frontend->>OrderService: POST /orders
+    OrderService->>RabbitMQ: OrderPlacedEvent
+    RabbitMQ->>PaymentService: consume event
+    PaymentService->>Stripe: create PaymentIntent
+    User->>Stripe: confirm payment (Elements)
+    Stripe-->>PaymentService: webhook
+    PaymentService->>RabbitMQ: PaymentConfirmedEvent
+    RabbitMQ->>OrderService: consume event
+    OrderService-->>User: Order status → Paid ✅
 ```
-OrderService ──[OrderPlacedEvent]──► PaymentService
-                                          │
-                                   auto-creates Payment
-                                          │
-PaymentService ──[PaymentConfirmedEvent]──► OrderService
-                                                │
-                                        Order status → Paid
+
+---
+
+## Order State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : order placed
+    Pending --> Paid : PaymentConfirmedEvent
+    Paid --> Shipped : admin update
+    Shipped --> Delivered : admin update
+    Pending --> Cancelled : cancel request
 ```
 
 ---
@@ -64,7 +97,7 @@ PaymentService ──[PaymentConfirmedEvent]──► OrderService
 | **ApiGateway** | 5000 | YARP reverse proxy, JWT auth middleware |
 | **UserService** | 5124 | Registration, login, JWT issuing, BCrypt hashing |
 | **ProductService** | 5212 | Product catalog, categories, Redis caching |
-| **OrderService** | 5313 | Order lifecycle (Pending → Paid → Shipped → Delivered \| Cancelled) |
+| **OrderService** | 5313 | Order lifecycle state machine |
 | **PaymentService** | 5314 | Stripe PaymentIntents, webhook handling |
 | **InventoryService** | 5315 | Stock seeding, adjustment, underflow protection |
 
@@ -100,10 +133,10 @@ PaymentService ──[PaymentConfirmedEvent]──► OrderService
 ```bash
 cp .env.example .env
 # Edit .env and fill in:
-#   Jwt__Secret        → any long random string
-#   Stripe__SecretKey  → sk_test_...
+#   Jwt__Secret           → any long random string
+#   Stripe__SecretKey     → sk_test_...
 #   Stripe__WebhookSecret → whsec_...
-#   Stripe__Currency   → usd
+#   Stripe__Currency      → usd
 ```
 
 ### 2. Start all backend services
@@ -133,6 +166,139 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🎮 Cheat Codes
+
+> Copy-paste ready commands for every situation.
+
+### Build
+
+```bash
+# Build everything
+dotnet build
+
+# Build one service
+dotnet build UserService
+
+# Build in Release mode
+dotnet build --configuration Release
+```
+
+### Run (without Docker)
+
+```bash
+# Run a single service locally
+dotnet run --project UserService
+dotnet run --project ProductService
+dotnet run --project OrderService
+dotnet run --project PaymentService
+dotnet run --project InventoryService
+dotnet run --project ApiGateway
+
+# Run with hot reload (watches for file changes)
+dotnet watch --project OrderService
+```
+
+### Test
+
+```bash
+# Run all 73 tests
+dotnet test
+
+# Show each test name as it runs (great for demos)
+dotnet test --logger "console;verbosity=normal"
+
+# Run tests for one service only
+dotnet test UserService.Tests
+dotnet test OrderService.Tests
+dotnet test ProductService.Tests
+dotnet test PaymentService.Tests
+dotnet test InventoryService.Tests
+
+# Run tests + show coverage summary
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+### Docker
+
+```bash
+# Start all services in the background
+docker compose up -d
+
+# Start and stream logs to the terminal
+docker compose up
+
+# Start only specific services
+docker compose up -d postgres rabbitmq redis
+
+# Rebuild images and start (use after code changes)
+docker compose up -d --build
+
+# Rebuild one service image
+docker compose build orderservice
+
+# Stop everything (keeps data volumes)
+docker compose down
+
+# View live logs for all services
+docker compose logs -f
+
+# View logs for one service
+docker compose logs -f paymentservice
+
+# Check what's running
+docker compose ps
+```
+
+### Database / Migrations
+
+```bash
+# Add a new migration
+dotnet ef migrations add YourMigrationName --project OrderService
+
+# Apply migrations to the DB
+dotnet ef database update --project OrderService
+
+# List all migrations
+dotnet ef migrations list --project OrderService
+
+# Remove last migration (if not applied yet)
+dotnet ef migrations remove --project OrderService
+```
+
+### Git
+
+```bash
+# Stay in sync before starting work
+git fetch origin
+git pull --rebase origin main
+
+# Stage everything and commit
+git add -A
+git commit -m "feat: your message here"
+
+# Push to both branches
+git push origin main
+git push origin main:master
+```
+
+### Useful Docker One-Liners
+
+```bash
+# Open a shell inside a running container
+docker exec -it ecommerce-postgres psql -U postgres
+
+# List all databases in Postgres
+docker exec -it ecommerce-postgres psql -U postgres -c "\l"
+
+# Check RabbitMQ queues (also available at http://localhost:15672)
+docker exec -it ecommerce-rabbitmq rabbitmqctl list_queues
+
+# Flush Redis cache
+docker exec -it ecommerce-redis redis-cli FLUSHALL
+```
 
 ---
 
@@ -224,18 +390,6 @@ ECommerce/
 │   └── postgres/init/       # Numbered SQL init scripts
 └── docker-compose.yml
 ```
-
----
-
-## Order State Machine
-
-```
-Pending ──► Paid ──► Shipped ──► Delivered
-   │
-   └──► Cancelled
-```
-
-Payment confirmation flows automatically via RabbitMQ: Stripe webhook → `PaymentConfirmedEvent` → OrderService consumer → status set to `Paid`.
 
 ---
 
