@@ -8,13 +8,28 @@ export default function AdminDashboardPage() {
   const [productCount, setProductCount] = useState<number | null>(null);
   const [orderCount, setOrderCount] = useState<number | null>(null);
   const [pendingOrders, setPendingOrders] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getProducts({ page: 1, pageSize: 1000 }).then((data) => setProductCount(data.length)).catch(console.error);
-    getOrders().then((data) => {
-      setOrderCount(data.length);
-      setPendingOrders(data.filter((o) => o.orderStatus === "Pending").length);
-    }).catch(console.error);
+    getProducts({ page: 1, pageSize: 1000 })
+      .then((data) => setProductCount(data.length))
+      .catch((err) => {
+        console.error(err);
+        setProductCount(0);
+        setError("Failed to load some stats. Check the console for details.");
+      });
+
+    getOrders()
+      .then((data) => {
+        setOrderCount(data.length);
+        setPendingOrders(data.filter((o) => o.orderStatus === "Pending").length);
+      })
+      .catch((err) => {
+        console.error(err);
+        setOrderCount(0);
+        setPendingOrders(0);
+        setError("Failed to load some stats. Check the console for details.");
+      });
   }, []);
 
   const cards = [
@@ -26,6 +41,12 @@ export default function AdminDashboardPage() {
   return (
     <>
       <h2 className="mb-4">Dashboard</h2>
+      {error && (
+        <div className="alert alert-danger alert-dismissible mb-4" role="alert">
+          {error}
+          <button type="button" className="btn-close" onClick={() => setError(null)} />
+        </div>
+      )}
       <div className="row g-4">
         {cards.map((card) => (
           <div className="col-md-4" key={card.label}>
